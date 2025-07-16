@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Detect Deepfakes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-zone {
+        position: relative;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .upload-zone.dragover {
+        transform: scale(1.02);
+        border-color: var(--primary-light);
+        background: rgba(99, 102, 241, 0.1);
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+    }
+    
+    .upload-zone.dragover::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(45deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+        animation: shimmer 1s infinite;
+    }
+    
+    .result-card {
+        animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .confidence-meter {
+        position: relative;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        height: 12px;
+        overflow: hidden;
+    }
+    
+    .confidence-fill {
+        height: 100%;
+        border-radius: 12px;
+        transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .confidence-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+    
+    .status-badge.real {
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    
+    .status-badge.fake {
+        background: linear-gradient(135deg, var(--error), #dc2626);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+    
+    .status-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    
+    .image-preview-container {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: all 0.4s ease;
+    }
+    
+    .image-preview-container:hover {
+        transform: scale(1.02);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .image-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(45deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .image-preview-container:hover .image-overlay {
+        opacity: 1;
+    }
+    
+    .file-info-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .loading-dots {
+        display: inline-flex;
+        gap: 0.25rem;
+    }
+    
+    .loading-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+        animation: loadingDots 1.4s infinite ease-in-out;
+    }
+    
+    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes loadingDots {
+        0%, 80%, 100% {
+            transform: scale(0);
+            opacity: 0.5;
+        }
+        40% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .pulse-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80px;
+        height: 80px;
+        border: 3px solid var(--primary);
+        border-radius: 50%;
+        animation: pulseRing 2s infinite;
+    }
+    
+    @keyframes pulseRing {
+        0% {
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(1.2);
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="text-center">
+        <div class="loading-spinner mb-4"></div>
+        <p class="text-lg font-semibold">Analyzing your image...</p>
+        <div class="loading-dots mt-2">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</div>
+
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="text-5xl md:text-6xl font-bold mb-6">Detect Deepfakes</h1>
+        <p class="text-xl text-gray-200 mb-8">Upload an image to analyze for potential deepfake manipulation</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container mx-auto">
+        <div class="max-w-4xl mx-auto">
+            <!-- Upload Section -->
+            <div class="card mb-8">
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold mb-4">Upload Image</h2>
+                    <p class="text-gray-300 mb-6">Supported formats: JPG, PNG, JPEG (Max 5MB)</p>
+
+                    <form id="uploadForm" class="space-y-6">
+                        <div class="flex flex-col items-center space-y-4">
+                            <!-- Image Preview Container -->
+                            <div class="w-full max-w-md relative group">
+                                <label for="image" class="upload-zone flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-primary-light rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all duration-300 relative overflow-hidden">
+                                    <div id="uploadPlaceholder" class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <div class="w-16 h-16 mb-4 rounded-full bg-primary/20 flex items-center justify-center animate-float">
+                                            <svg class="w-8 h-8 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                            </svg>
+                                        </div>
+                                        <p class="mb-2 text-sm text-gray-300">Click to upload or drag and drop</p>
+                                        <p class="text-xs text-gray-400">SVG, PNG, JPG or GIF</p>
+                                    </div>
+                                    <img id="imagePreview" class="hidden w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" src="" alt="Preview">
+                                    <input id="image" name="image" type="file" class="hidden" accept="image/*" />
+                                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                        <span class="text-white text-sm font-medium">Click to change image</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- File Info -->
+                            <div id="fileInfo" class="hidden w-full max-w-md">
+                                <div class="file-info-card">
+                                    <div class="flex justify-between items-center text-sm mb-2">
+                                        <span class="text-gray-400">File name:</span>
+                                        <span id="fileName" class="text-gray-300 font-medium"></span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-gray-400">File size:</span>
+                                        <span id="fileSize" class="text-gray-300 font-medium"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Loading Indicator -->
+                            <div id="loadingIndicator" class="hidden">
+                                <div class="flex items-center space-x-3 text-primary-light">
+                                    <div class="relative">
+                                        <div class="loading-spinner"></div>
+                                        <div class="pulse-ring"></div>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Analyzing image...</span>
+                                        <div class="loading-dots mt-1">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="result" class="hidden">
+                <div class="card result-card">
+                    <h3 class="text-2xl font-bold mb-6 text-center">Analysis Result</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Image Preview -->
+                        <div class="flex flex-col items-center">
+                            <h4 class="text-lg font-semibold mb-4">Uploaded Image</h4>
+                            <div class="image-preview-container w-full aspect-square">
+                                <img id="resultImagePreview" class="w-full h-full object-cover" src="" alt="Result Preview">
+                                <div class="image-overlay"></div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Details -->
+                        <div class="flex flex-col justify-center">
+                            <div class="space-y-8">
+                                <div class="flex flex-col space-y-4">
+                                    <span class="text-gray-300 text-sm font-medium">Status</span>
+                                    <div class="flex items-center space-x-3">
+                                        <span id="status" class="text-3xl font-bold"></span>
+                                        <div id="statusIcon" class="w-8 h-8"></div>
+                                        <div id="statusBadge" class="status-badge"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex flex-col space-y-4">
+                                    <span class="text-gray-300 text-sm font-medium">Confidence Level</span>
+                                    <div class="space-y-3">
+                                        <div class="confidence-meter">
+                                            <div id="confidenceBar" class="confidence-fill" style="width: 0%"></div>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm text-gray-400">0%</span>
+                                            <span id="confidence" class="text-2xl font-bold"></span>
+                                            <span class="text-sm text-gray-400">100%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col space-y-3">
+                                    <span class="text-gray-300 text-sm font-medium">Analysis Details</span>
+                                    <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                        <p id="details" class="text-gray-300 leading-relaxed"></p>
+                                    </div>
+                                </div>
+
+                                <div class="flex space-x-4">
+                                    <button id="analyzeAgain" class="btn btn-secondary flex-1">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        Analyze Another
+                                    </button>
+                                    <button id="downloadReport" class="btn flex-1">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        Download Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// Enhanced drag and drop functionality
+const uploadZone = document.querySelector('.upload-zone');
+const fileInput = document.getElementById('image');
+
+// Drag and drop events
+uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        handleFileSelect({ target: { files } });
+    }
+});
+
+// Handle image upload and automatic analysis
+document.getElementById('image').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const preview = document.getElementById('imagePreview');
+            const resultPreview = document.getElementById('resultImagePreview');
+            const placeholder = document.getElementById('uploadPlaceholder');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            // Show preview and file info with animations
+            preview.src = e.target.result;
+            resultPreview.src = e.target.result;
+            preview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            fileInfo.classList.remove('hidden');
+            loadingIndicator.classList.remove('hidden');
+            
+            // Animate file info appearance
+            fileInfo.style.animation = 'slideIn 0.5s ease-out';
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                
+                const resultDiv = document.getElementById('result');
+                const statusSpan = document.getElementById('status');
+                const statusIcon = document.getElementById('statusIcon');
+                const statusBadge = document.getElementById('statusBadge');
+                const confidenceSpan = document.getElementById('confidence');
+                const confidenceBar = document.getElementById('confidenceBar');
+                const detailsP = document.getElementById('details');
+                
+                // Hide loading indicator and show results
+                loadingIndicator.classList.add('hidden');
+                resultDiv.classList.remove('hidden');
+                
+                // Animate result appearance
+                resultDiv.style.animation = 'slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                
+                if (data.is_fake) {
+                    statusSpan.textContent = 'Fake';
+                    statusSpan.classList.add('text-error');
+                    statusSpan.classList.remove('text-success');
+                    statusBadge.textContent = 'FAKE DETECTED';
+                    statusBadge.className = 'status-badge fake';
+                    statusIcon.innerHTML = `
+                        <svg class="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    `;
+                    detailsP.textContent = 'This image shows signs of AI manipulation or deepfake generation. The analysis indicates a high probability of digital alteration.';
+                } else {
+                    statusSpan.textContent = 'Real';
+                    statusSpan.classList.add('text-success');
+                    statusSpan.classList.remove('text-error');
+                    statusBadge.textContent = 'AUTHENTIC';
+                    statusBadge.className = 'status-badge real';
+                    statusIcon.innerHTML = `
+                        <svg class="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    `;
+                    detailsP.textContent = 'This image appears to be authentic with no signs of AI manipulation. The analysis indicates a high probability of being a genuine photograph.';
+                }
+                
+                const confidencePercent = (data.confidence * 100).toFixed(2);
+                confidenceSpan.textContent = `${confidencePercent}%`;
+                
+                // Animate confidence bar
+                setTimeout(() => {
+                    confidenceBar.style.width = `${confidencePercent}%`;
+                    confidenceBar.style.background = data.is_fake 
+                        ? 'linear-gradient(90deg, var(--error), #dc2626)' 
+                        : 'linear-gradient(90deg, var(--success), #059669)';
+                }, 300);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                loadingIndicator.classList.add('hidden');
+                showError('An error occurred while processing the image. Please try again.');
+            }
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Analyze again button
+document.getElementById('analyzeAgain').addEventListener('click', () => {
+    // Reset the form
+    document.getElementById('uploadForm').reset();
+    document.getElementById('imagePreview').classList.add('hidden');
+    document.getElementById('uploadPlaceholder').classList.remove('hidden');
+    document.getElementById('fileInfo').classList.add('hidden');
+    document.getElementById('result').classList.add('hidden');
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Download report button
+document.getElementById('downloadReport').addEventListener('click', () => {
+    // Create a simple report
+    const status = document.getElementById('status').textContent;
+    const confidence = document.getElementById('confidence').textContent;
+    const details = document.getElementById('details').textContent;
+    
+    const report = `Deepfake Detection Report\n\nStatus: ${status}\nConfidence: ${confidence}\nDetails: ${details}\n\nGenerated on: ${new Date().toLocaleString()}`;
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'deepfake-detection-report.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Show error function
+function showError(message) {
+    const resultDiv = document.getElementById('result');
+    const statusSpan = document.getElementById('status');
+    const statusBadge = document.getElementById('statusBadge');
+    const detailsP = document.getElementById('details');
+    
+    resultDiv.classList.remove('hidden');
+    statusSpan.textContent = 'Error';
+    statusSpan.className = 'text-error text-3xl font-bold';
+    statusBadge.textContent = 'ERROR';
+    statusBadge.className = 'status-badge error';
+    detailsP.textContent = message;
+    
+    // Add shake animation
+    resultDiv.style.animation = 'shake 0.5s ease-in-out';
+    setTimeout(() => {
+        resultDiv.style.animation = '';
+    }, 500);
+}
+
+// Add scroll effect to navbar
+window.addEventListener('scroll', () => {
+    const navbar = document.querySelector('.navbar');
+    if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+    } else {
+        navbar.classList.remove('scrolled');
+    }
+});
+
+// Add intersection observer for animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.animation = 'fadeInUp 0.6s ease-out';
+        }
+    });
+}, observerOptions);
+
+// Observe cards for animation
+document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => observer.observe(card));
+});
+</script>
+{% endblock %} 

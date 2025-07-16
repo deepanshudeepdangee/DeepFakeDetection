@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block title %}About - Deepfake Detection{% endblock %}
+
+{% block extra_css %}
+<style>
+    .team-card {
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .team-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+        transition: left 0.6s ease;
+    }
+    
+    .team-card:hover::before {
+        left: 100%;
+    }
+    
+    .team-card:hover {
+        transform: translateY(-10px) scale(1.02);
+    }
+    
+    .team-avatar {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .team-card:hover .team-avatar {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .team-avatar::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+    }
+    
+    .team-card:hover .team-avatar::before {
+        transform: translateX(100%);
+    }
+    
+    .tech-card {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .tech-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.4s ease;
+    }
+    
+    .tech-card:hover::after {
+        transform: scaleX(1);
+    }
+    
+    .tech-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .mission-section {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .mission-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 70%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+        animation: pulse 6s ease-in-out infinite;
+    }
+    
+    .contact-section {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .contact-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(244, 114, 182, 0.1));
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    .floating-shapes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    
+    .floating-shape {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: var(--primary);
+        border-radius: 50%;
+        animation: floatShape 8s ease-in-out infinite;
+    }
+    
+    .floating-shape:nth-child(1) {
+        top: 15%;
+        left: 15%;
+        animation-delay: 0s;
+    }
+    
+    .floating-shape:nth-child(2) {
+        top: 75%;
+        left: 85%;
+        animation-delay: 2s;
+    }
+    
+    .floating-shape:nth-child(3) {
+        top: 85%;
+        left: 25%;
+        animation-delay: 4s;
+    }
+    
+    .floating-shape:nth-child(4) {
+        top: 25%;
+        left: 75%;
+        animation-delay: 1s;
+    }
+    
+    .floating-shape:nth-child(5) {
+        top: 65%;
+        left: 35%;
+        animation-delay: 3s;
+    }
+    
+    @keyframes floatShape {
+        0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0.4;
+        }
+        50% {
+            transform: translateY(-25px) rotate(180deg);
+            opacity: 1;
+        }
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, var(--primary), var(--accent));
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 2rem;
+        padding-left: 2rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 0.5rem;
+        width: 12px;
+        height: 12px;
+        background: var(--primary);
+        border-radius: 50%;
+        border: 3px solid var(--background);
+    }
+    
+    .timeline-item:hover::before {
+        background: var(--accent);
+        transform: scale(1.2);
+        transition: all 0.3s ease;
+    }
+    
+    .achievement-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+    
+    .achievement-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .achievement-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+        transition: left 0.6s ease;
+    }
+    
+    .achievement-card:hover::before {
+        left: 100%;
+    }
+    
+    .achievement-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-light);
+    }
+    
+    .achievement-icon {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .achievement-card:hover .achievement-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- About Hero -->
+<section class="hero">
+    <div class="floating-shapes">
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+    </div>
+    <div class="hero-content">
+        <h1 class="text-5xl md:text-6xl font-bold mb-6">About DeepDetect</h1>
+        <p class="text-xl text-gray-200 mb-8">Learn about our mission to combat digital deception through advanced AI technology.</p>
+    </div>
+</section>
+
+<!-- Mission Section -->
+<section class="section mission-section">
+    <div class="container mx-auto relative z-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+                <h2 class="section-title mb-6">Our Mission</h2>
+                <p class="text-gray-300 mb-6">In an era where digital manipulation is becoming increasingly sophisticated, our mission is to provide reliable and accessible tools for detecting AI-generated content.</p>
+                <p class="text-gray-300 mb-8">We believe in maintaining the integrity of digital media and protecting users from the potential harms of deepfake technology.</p>
+                
+                <div class="achievement-grid">
+                    <div class="achievement-card">
+                        <div class="achievement-icon">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Trust & Security</h3>
+                        <p class="text-gray-300 text-sm">Building trust through reliable detection</p>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Innovation</h3>
+                        <p class="text-gray-300 text-sm">Cutting-edge AI technology</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="aspect-w-16 aspect-h-9">
+                    <div class="w-full h-full bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                        <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Technology Section -->
+<section class="section">
+    <div class="container mx-auto">
+        <h2 class="section-title text-center mb-12">Our Technology</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="card tech-card">
+                <div class="text-center mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-center">Advanced AI Models</h3>
+                <p class="text-gray-300">Utilizing state-of-the-art deep learning models trained on extensive datasets of both real and AI-generated images.</p>
+            </div>
+            <div class="card tech-card">
+                <div class="text-center mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-center">Real-time Analysis</h3>
+                <p class="text-gray-300">Fast and efficient processing that provides results in seconds, with detailed confidence scores.</p>
+            </div>
+            <div class="card tech-card">
+                <div class="text-center mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-center">Continuous Improvement</h3>
+                <p class="text-gray-300">Our models are constantly updated to stay ahead of evolving deepfake generation techniques.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Timeline Section -->
+<section class="section bg-blue-900 bg-opacity-50">
+    <div class="container mx-auto">
+        <h2 class="section-title text-center mb-12">Our Journey</h2>
+        <div class="max-w-4xl mx-auto">
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h3 class="text-lg font-bold mb-2">2022 - Foundation</h3>
+                    <p class="text-gray-300">Started with a vision to combat digital deception through AI-powered detection.</p>
+                </div>
+                <div class="timeline-item">
+                    <h3 class="text-lg font-bold mb-2">2023 - Development</h3>
+                    <p class="text-gray-300">Built and trained our first deep learning models on extensive datasets.</p>
+                </div>
+                <div class="timeline-item">
+                    <h3 class="text-lg font-bold mb-2">2024 - Launch</h3>
+                    <p class="text-gray-300">Released our platform to the public, achieving 99.8% accuracy in deepfake detection.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="section">
+    <div class="container mx-auto">
+        <h2 class="section-title text-center mb-12">Our Team</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="card team-card text-center">
+                <div class="team-avatar">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-2">AI Researcher</h3>
+                <p class="text-gray-300">Expert in deep learning and computer vision</p>
+            </div>
+            <div class="card team-card text-center">
+                <div class="team-avatar">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Data Scientist</h3>
+                <p class="text-gray-300">Specializing in image analysis and pattern recognition</p>
+            </div>
+            <div class="card team-card text-center">
+                <div class="team-avatar">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Security Expert</h3>
+                <p class="text-gray-300">Focusing on digital security and authentication</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section class="section contact-section">
+    <div class="container mx-auto text-center relative z-10">
+        <h2 class="section-title mb-6">Get in Touch</h2>
+        <p class="text-xl text-gray-200 mb-8">Have questions or want to learn more? Contact our team.</p>
+        <div class="flex justify-center space-x-4">
+            <a href="mailto:contact@deepdetect.com" class="btn">Contact Us</a>
+            <a href="/detect" class="btn btn-outline">Try Detection</a>
+        </div>
+    </div>
+</section>
+
+<script>
+// Add click handlers to team cards
+document.addEventListener('DOMContentLoaded', () => {
+    const teamCards = document.querySelectorAll('.team-card');
+    teamCards.forEach(card => {
+        card.addEventListener('click', () => {
+            // Add click animation
+            card.style.animation = 'bounce 0.6s ease-in-out';
+            setTimeout(() => {
+                card.style.animation = '';
+            }, 600);
+        });
+    });
+    
+    // Add click handlers to tech cards
+    const techCards = document.querySelectorAll('.tech-card');
+    techCards.forEach(card => {
+        card.addEventListener('click', () => {
+            // Add click animation
+            card.style.animation = 'pulse 0.6s ease-in-out';
+            setTimeout(() => {
+                card.style.animation = '';
+            }, 600);
+        });
+    });
+    
+    // Add click handlers to achievement cards
+    const achievementCards = document.querySelectorAll('.achievement-card');
+    achievementCards.forEach(card => {
+        card.addEventListener('click', () => {
+            // Add click animation
+            card.style.animation = 'bounce 0.6s ease-in-out';
+            setTimeout(() => {
+                card.style.animation = '';
+            }, 600);
+        });
+    });
+});
+
+// Parallax effect for floating shapes
+window.addEventListener('scroll', () => {
+    const scrolled = window.pageYOffset;
+    const floatingShapes = document.querySelectorAll('.floating-shape');
+    
+    floatingShapes.forEach((shape, index) => {
+        const speed = 0.3 + (index * 0.1);
+        shape.style.transform = `translateY(${scrolled * speed}px) rotate(${scrolled * 0.1}deg)`;
+    });
+});
+
+// Intersection Observer for timeline animations
+const timelineObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.animation = 'slideIn 0.6s ease-out';
+        }
+    });
+}, { threshold: 0.3 });
+
+// Observe timeline items
+document.addEventListener('DOMContentLoaded', () => {
+    const timelineItems = document.querySelectorAll('.timeline-item');
+    timelineItems.forEach(item => timelineObserver.observe(item));
+});
+</script>
+{% endblock %} 

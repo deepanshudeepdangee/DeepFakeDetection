@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Deepfake Detection{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feature-card {
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+        transition: left 0.6s ease;
+    }
+    
+    .feature-card:hover::before {
+        left: 100%;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-15px) scale(1.03);
+    }
+    
+    .feature-icon {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.1) rotate(5deg);
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+    }
+    
+    .feature-card:hover .feature-icon svg {
+        transform: scale(1.1);
+    }
+    
+    .feature-icon svg {
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin: 4rem 0;
+    }
+    
+    .stat-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-light);
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--primary-light), var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .cta-section {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cta-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(244, 114, 182, 0.1));
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    .floating-elements {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    
+    .floating-element {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: var(--primary);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    .floating-element:nth-child(1) {
+        top: 20%;
+        left: 10%;
+        animation-delay: 0s;
+    }
+    
+    .floating-element:nth-child(2) {
+        top: 60%;
+        left: 80%;
+        animation-delay: 2s;
+    }
+    
+    .floating-element:nth-child(3) {
+        top: 80%;
+        left: 20%;
+        animation-delay: 4s;
+    }
+    
+    .floating-element:nth-child(4) {
+        top: 30%;
+        left: 70%;
+        animation-delay: 1s;
+    }
+    
+    .floating-element:nth-child(5) {
+        top: 70%;
+        left: 30%;
+        animation-delay: 3s;
+    }
+    
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0.3;
+        }
+        50% {
+            transform: translateY(-20px) rotate(180deg);
+            opacity: 1;
+        }
+    }
+    
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+    }
+    
+    .btn-outline {
+        background: transparent;
+        border: 2px solid var(--primary-light);
+        color: var(--primary-light);
+        padding: 0.875rem 2.5rem;
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-outline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: var(--primary-light);
+        transition: left 0.4s ease;
+        z-index: -1;
+    }
+    
+    .btn-outline:hover::before {
+        left: 0;
+    }
+    
+    .btn-outline:hover {
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="floating-elements">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+    </div>
+    <div class="hero-content">
+        <h1 class="text-5xl md:text-6xl font-bold mb-6">Detect Deepfakes with AI</h1>
+        <p class="text-xl text-gray-200 mb-8">Advanced technology to identify AI-generated images and protect against digital deception.</p>
+        <div class="hero-buttons">
+            <a href="/detect" class="btn">Try It Now</a>
+            <a href="/about" class="btn-outline">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="section">
+    <div class="container mx-auto">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" data-target="99.8">0</div>
+                <div class="stat-label">Accuracy Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="50000">0</div>
+                <div class="stat-label">Images Analyzed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="1000">0</div>
+                <div class="stat-label">Happy Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="24">0</div>
+                <div class="stat-label">Hours Support</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="section">
+    <div class="container mx-auto">
+        <h2 class="section-title text-center mb-12">How It Works</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="card feature-card">
+                <div class="text-center">
+                    <div class="feature-icon w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Upload Image</h3>
+                    <p class="text-gray-300">Simply upload any image you want to analyze for potential deepfake manipulation.</p>
+                </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="card feature-card">
+                <div class="text-center">
+                    <div class="feature-icon w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">AI Analysis</h3>
+                    <p class="text-gray-300">Our advanced AI model analyzes the image for signs of manipulation and deepfake generation.</p>
+                </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="card feature-card">
+                <div class="text-center">
+                    <div class="feature-icon w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Get Results</h3>
+                    <p class="text-gray-300">Receive detailed analysis and confidence scores about the authenticity of the image.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="section cta-section">
+    <div class="container mx-auto text-center relative z-10">
+        <h2 class="section-title mb-6">Ready to Detect Deepfakes?</h2>
+        <p class="text-xl text-gray-200 mb-8">Try our advanced deepfake detection technology today.</p>
+        <div class="hero-buttons">
+            <a href="/detect" class="btn">Start Detection</a>
+            <a href="/about" class="btn-outline">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<script>
+// Animate stats numbers
+function animateStats() {
+    const statNumbers = document.querySelectorAll('.stat-number');
+    
+    statNumbers.forEach(stat => {
+        const target = parseInt(stat.getAttribute('data-target'));
+        const duration = 2000; // 2 seconds
+        const step = target / (duration / 16); // 60fps
+        let current = 0;
+        
+        const timer = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            stat.textContent = Math.floor(current);
+        }, 16);
+    });
+}
+
+// Intersection Observer for stats animation
+const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            animateStats();
+            statsObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.5 });
+
+// Observe stats section
+document.addEventListener('DOMContentLoaded', () => {
+    const statsSection = document.querySelector('.stats-container');
+    if (statsSection) {
+        statsObserver.observe(statsSection);
+    }
+    
+    // Add click handlers to feature cards
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach(card => {
+        card.addEventListener('click', () => {
+            // Add click animation
+            card.style.animation = 'bounce 0.6s ease-in-out';
+            setTimeout(() => {
+                card.style.animation = '';
+            }, 600);
+        });
+    });
+});
+
+// Parallax effect for floating elements
+window.addEventListener('scroll', () => {
+    const scrolled = window.pageYOffset;
+    const floatingElements = document.querySelectorAll('.floating-element');
+    
+    floatingElements.forEach((element, index) => {
+        const speed = 0.5 + (index * 0.1);
+        element.style.transform = `translateY(${scrolled * speed}px)`;
+    });
+});
+</script>
+{% endblock %} 
